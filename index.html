@@ -416,7 +416,7 @@ body {
   display: flex;
   justify-content: center;
 }
-.radar-canvas { max-width: 280px; width: 100%; }
+.radar-canvas { max-width: 340px; width: 100%; }
 
 .detail-categories { padding: 0.5rem 1rem 1rem; }
 
@@ -1032,7 +1032,7 @@ function drawRadar(venueId) {
   const canvas = document.getElementById(`radar-${venueId}`);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const size = 280;
+  const size = 340;
   const dpr = window.devicePixelRatio || 1;
   canvas.width = size * dpr;
   canvas.height = size * dpr;
@@ -1042,7 +1042,7 @@ function drawRadar(venueId) {
 
   const cx = size / 2;
   const cy = size / 2;
-  const maxR = 100;
+  const maxR = 95;
   const labels = CATEGORIES.map(c => c.name);
   const n = labels.length;
   const angleStep = (Math.PI * 2) / n;
@@ -1077,12 +1077,15 @@ function drawRadar(venueId) {
   // Labels
   ctx.fillStyle = '#555';
   ctx.font = '11px "Hiragino Sans", Arial, sans-serif';
-  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (let i = 0; i < n; i++) {
     const a = startAngle + i * angleStep;
-    const lr = maxR + 22;
-    ctx.fillText(labels[i], cx + lr * Math.cos(a), cy + lr * Math.sin(a));
+    const lr = maxR + 28;
+    const lx = cx + lr * Math.cos(a);
+    const ly = cy + lr * Math.sin(a);
+    const cos = Math.cos(a);
+    ctx.textAlign = cos > 0.1 ? 'left' : cos < -0.1 ? 'right' : 'center';
+    ctx.fillText(labels[i], lx, ly);
   }
 
   function drawData(person, color, alpha) {
