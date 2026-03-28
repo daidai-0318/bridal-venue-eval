@@ -1555,7 +1555,10 @@ function renderResult() {
 
 function scrollToDetail(venueId) {
   const el = document.getElementById('detail-' + venueId);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!el) return;
+  const headerH = document.querySelector('.result-header').offsetHeight;
+  const y = el.getBoundingClientRect().top + window.scrollY - headerH - 8;
+  window.scrollTo({ top: y, behavior: 'smooth' });
 }
 
 // ===== CATEGORY VENUE COMPARE =====
