@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>式場評価アプリ</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1192,7 +1192,7 @@ function renderEvalForm() {
 
   html += `<div class="memo-section">
     <div class="memo-label">メモ・感想</div>
-    <textarea class="memo-input" id="memo-input" placeholder="自由にメモを記入...">${memo}</textarea>
+    <input type="text" class="estimate-input" id="memo-input" placeholder="自由にメモを記入..." value="${memo}">
   </div>`;
 
   html += `<div style="height: 5rem;"></div>`;
