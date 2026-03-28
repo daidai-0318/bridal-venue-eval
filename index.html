@@ -743,7 +743,7 @@ body {
     <div class="venue-tabs" id="venue-tabs"></div>
   </div>
   <div class="eval-body" id="eval-body"></div>
-  <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(event)">
+  <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotoSelect(event)">
 </div>
 
 <!-- ===== RESULT SCREEN ===== -->
@@ -1091,21 +1091,25 @@ async function saveEval() {
 
 // Photo handling
 async function handlePhotoSelect(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+  const files = Array.from(event.target.files);
+  if (files.length === 0) return;
   event.target.value = '';
 
   const venue = VENUES[currentVenueIdx];
-  showToast('アップロード中...');
+  showToast(`${files.length}枚アップロード中...`);
 
   try {
-    const photo = await uploadPhoto(currentPerson, venue.id, file);
     const existing = getCachedEval(currentPerson, venue.id) || { ratings: {}, memo: '', photos: [] };
     if (!existing.photos) existing.photos = [];
-    existing.photos.push(photo);
+
+    for (const file of files) {
+      const photo = await uploadPhoto(currentPerson, venue.id, file);
+      existing.photos.push(photo);
+    }
+
     await saveEvalData(currentPerson, venue.id, existing);
     renderEvalForm();
-    showToast('写真を保存しました');
+    showToast(`${files.length}枚の写真を保存しました`);
   } catch (e) {
     console.error('Upload error:', e);
     showToast('アップロードエラー');
