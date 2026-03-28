@@ -416,7 +416,7 @@ body {
   display: flex;
   justify-content: center;
 }
-.radar-canvas { max-width: 340px; width: 100%; }
+.radar-canvas { max-width: 380px; width: 100%; }
 
 .detail-categories { padding: 0.5rem 1rem 1rem; }
 
@@ -1032,7 +1032,7 @@ function drawRadar(venueId) {
   const canvas = document.getElementById(`radar-${venueId}`);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const size = 340;
+  const size = 380;
   const dpr = window.devicePixelRatio || 1;
   canvas.width = size * dpr;
   canvas.height = size * dpr;
@@ -1042,8 +1042,9 @@ function drawRadar(venueId) {
 
   const cx = size / 2;
   const cy = size / 2;
-  const maxR = 95;
-  const labels = CATEGORIES.map(c => c.name);
+  const maxR = 80;
+  const shortLabels = { venue: '会場・空間', food: 'お料理', staff: 'スタッフ', prestige: '格式・知名度', cost: '料金・予算' };
+  const labels = CATEGORIES.map(c => shortLabels[c.id] || c.name);
   const n = labels.length;
   const angleStep = (Math.PI * 2) / n;
   const startAngle = -Math.PI / 2;
@@ -1080,7 +1081,7 @@ function drawRadar(venueId) {
   ctx.textBaseline = 'middle';
   for (let i = 0; i < n; i++) {
     const a = startAngle + i * angleStep;
-    const lr = maxR + 28;
+    const lr = maxR + 35;
     const lx = cx + lr * Math.cos(a);
     const ly = cy + lr * Math.sin(a);
     const cos = Math.cos(a);
