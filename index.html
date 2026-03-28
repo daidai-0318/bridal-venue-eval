@@ -1376,11 +1376,11 @@ function renderResult() {
       <div class="section-title">総合ランキング</div>`;
     rankings.forEach((v, i) => {
       const rank = i + 1;
-      html += `<div class="ranking-card rank-${rank}">
+      html += `<div class="ranking-card rank-${rank}" onclick="scrollToDetail('${v.id}')" style="cursor:pointer;">
         <div class="rank-badge">${rank}</div>
         <div class="ranking-info">
           <div class="ranking-venue-name">${v.name}</div>
-          <div class="ranking-venue-detail">${v.type}・${v.area}</div>
+          <div class="ranking-venue-detail">${v.type}・${v.area} ▼ 詳細</div>
         </div>
         <div class="ranking-scores">
           <div class="ranking-avg">${v.avg.toFixed(2)}</div>
@@ -1417,7 +1417,7 @@ function renderResult() {
       ...((bData && bData.photos) || []).map(p => ({ ...p, who: '柚季' })),
     ];
 
-    html += `<div class="detail-venue-card">
+    html += `<div class="detail-venue-card" id="detail-${v.id}">
       <div class="detail-venue-header">
         <div class="detail-venue-name">${v.name}</div>
       </div>
@@ -1551,6 +1551,11 @@ function renderResult() {
   // Draw radar charts & category compare
   rankings.forEach(v => drawRadar(v.id));
   renderCatVenueCompare();
+}
+
+function scrollToDetail(venueId) {
+  const el = document.getElementById('detail-' + venueId);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ===== CATEGORY VENUE COMPARE =====
