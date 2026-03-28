@@ -285,6 +285,114 @@ body {
 }
 .memo-input:focus { outline: none; border-color: var(--gold); }
 
+/* Photo section */
+.photo-section {
+  margin-top: 1rem;
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.photo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+.photo-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gray);
+}
+.photo-add-btn {
+  background: var(--gold);
+  color: var(--white);
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+.photo-thumb {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+}
+.photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photo-thumb .photo-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.photo-uploading {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: var(--light-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--gray);
+}
+.photo-empty {
+  text-align: center;
+  padding: 1rem;
+  color: var(--gray);
+  font-size: 0.78rem;
+}
+
+/* Photo lightbox */
+.lightbox {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.lightbox.active { display: flex; }
+.lightbox img {
+  max-width: 95%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
 .save-toast {
   position: fixed;
   bottom: 2rem;
@@ -496,7 +604,6 @@ body {
 .legend-dot.a { background: var(--gold); }
 .legend-dot.b { background: #7BA4C4; }
 
-/* Reset button */
 .cat-filter-tabs {
   display: flex;
   gap: 0.4rem;
@@ -552,6 +659,23 @@ body {
   color: var(--gold);
 }
 
+/* Photo gallery in results */
+.detail-photos {
+  padding: 0.5rem 1rem 1rem;
+}
+.detail-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+.detail-photos-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
 .reset-section {
   text-align: center;
   margin-top: 2rem;
@@ -568,6 +692,13 @@ body {
   font-family: inherit;
 }
 
+.sync-status {
+  font-size: 0.7rem;
+  color: var(--gray);
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
 @media (min-width: 600px) {
   .top-title { font-size: 2rem; }
   .top-buttons { max-width: 380px; }
@@ -579,6 +710,12 @@ body {
 
 <!-- TOAST -->
 <div class="save-toast" id="toast">保存しました</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close">&times;</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
 
 <!-- ===== TOP SCREEN ===== -->
 <div class="screen top-screen active" id="screen-top">
@@ -592,6 +729,7 @@ body {
     <button class="btn btn-result" onclick="showResult()">結果を見る</button>
   </div>
   <div class="top-status" id="top-status"></div>
+  <div class="sync-status" id="sync-status"></div>
 </div>
 
 <!-- ===== EVAL SCREEN ===== -->
@@ -605,6 +743,7 @@ body {
     <div class="venue-tabs" id="venue-tabs"></div>
   </div>
   <div class="eval-body" id="eval-body"></div>
+  <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelect(event)">
 </div>
 
 <!-- ===== RESULT SCREEN ===== -->
@@ -616,7 +755,26 @@ body {
   <div class="result-body" id="result-body"></div>
 </div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
 <script>
+// ===== FIREBASE INIT =====
+const firebaseConfig = {
+  apiKey: "AIzaSyCwIYnPMn4iGjjev7CqoXoPqALnJwAFoKg",
+  authDomain: "bridal-venue-eval.firebaseapp.com",
+  projectId: "bridal-venue-eval",
+  storageBucket: "bridal-venue-eval.firebasestorage.app",
+  messagingSenderId: "775666370753",
+  appId: "1:775666370753:web:fd22363a0907c022ceac40"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
 // ===== DATA =====
 const VENUES = [
   { id: "tokyo-kaikan", name: "東京會舘", type: "専門式場", area: "東京駅・丸の内" },
@@ -674,37 +832,114 @@ const CATEGORIES = [
 // ===== STATE =====
 let currentPerson = null;
 let currentVenueIdx = 0;
+let evalCache = {}; // { "person_venueId": { ratings, memo, photos } }
 
-function getStorageKey(person, venueId) {
-  return `eval_${person}_${venueId}`;
+// ===== FIRESTORE HELPERS =====
+function docId(person, venueId) {
+  return `${person}_${venueId}`;
 }
 
-function loadEval(person, venueId) {
-  const raw = localStorage.getItem(getStorageKey(person, venueId));
-  return raw ? JSON.parse(raw) : null;
+async function loadEval(person, venueId) {
+  const key = docId(person, venueId);
+  if (evalCache[key] !== undefined) return evalCache[key];
+  try {
+    const doc = await db.collection('evaluations').doc(key).get();
+    const data = doc.exists ? doc.data() : null;
+    evalCache[key] = data;
+    return data;
+  } catch (e) {
+    console.error('Load error:', e);
+    return null;
+  }
 }
 
-function saveEvalData(person, venueId, data) {
-  localStorage.setItem(getStorageKey(person, venueId), JSON.stringify(data));
+async function saveEvalData(person, venueId, data) {
+  const key = docId(person, venueId);
+  evalCache[key] = data;
+  try {
+    await db.collection('evaluations').doc(key).set(data, { merge: true });
+  } catch (e) {
+    console.error('Save error:', e);
+    showToast('保存エラー');
+  }
+}
+
+async function loadAllData() {
+  try {
+    const snapshot = await db.collection('evaluations').get();
+    snapshot.forEach(doc => {
+      evalCache[doc.id] = doc.data();
+    });
+    document.getElementById('sync-status').textContent = 'クラウド同期済み';
+  } catch (e) {
+    console.error('Sync error:', e);
+    document.getElementById('sync-status').textContent = '同期エラー';
+  }
+}
+
+function getCachedEval(person, venueId) {
+  return evalCache[docId(person, venueId)] || null;
 }
 
 function hasAnyData(person) {
-  return VENUES.some(v => loadEval(person, v.id) !== null);
+  return VENUES.some(v => getCachedEval(person, v.id) !== null);
 }
 
 function getVenueScore(person, venueId) {
-  const data = loadEval(person, venueId);
+  const data = getCachedEval(person, venueId);
   if (!data || !data.ratings) return null;
   const vals = Object.values(data.ratings).filter(v => v > 0);
   return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
 }
 
 function getCategoryAvg(person, venueId, catId) {
-  const data = loadEval(person, venueId);
+  const data = getCachedEval(person, venueId);
   if (!data || !data.ratings) return null;
   const cat = CATEGORIES.find(c => c.id === catId);
   const vals = cat.items.map(it => data.ratings[it.id] || 0).filter(v => v > 0);
   return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+}
+
+// ===== PHOTO HELPERS =====
+async function uploadPhoto(person, venueId, file) {
+  const ts = Date.now();
+  const path = `photos/${person}/${venueId}/${ts}_${file.name}`;
+  const ref = storage.ref(path);
+  const compressed = await compressImage(file, 1200, 0.7);
+  await ref.put(compressed);
+  const url = await ref.getDownloadURL();
+  return { url, path };
+}
+
+function compressImage(file, maxSize, quality) {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxSize || h > maxSize) {
+        if (w > h) { h = h * maxSize / w; w = maxSize; }
+        else { w = w * maxSize / h; h = maxSize; }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(resolve, 'image/jpeg', quality);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function deletePhoto(person, venueId, photoIdx) {
+  const data = getCachedEval(person, venueId);
+  if (!data || !data.photos || !data.photos[photoIdx]) return;
+  const photo = data.photos[photoIdx];
+  try {
+    await storage.ref(photo.path).delete();
+  } catch (e) { console.error('Delete storage error:', e); }
+  data.photos.splice(photoIdx, 1);
+  await saveEvalData(person, venueId, data);
 }
 
 // ===== SCREENS =====
@@ -714,14 +949,15 @@ function showScreen(id) {
   window.scrollTo(0, 0);
 }
 
-function goTop() {
+async function goTop() {
   showScreen('screen-top');
+  await loadAllData();
   updateTopStatus();
 }
 
 function updateTopStatus() {
-  const aCount = VENUES.filter(v => loadEval('大悟', v.id)).length;
-  const bCount = VENUES.filter(v => loadEval('柚季', v.id)).length;
+  const aCount = VENUES.filter(v => getCachedEval('大悟', v.id)).length;
+  const bCount = VENUES.filter(v => getCachedEval('柚季', v.id)).length;
   const el = document.getElementById('top-status');
   if (aCount === 0 && bCount === 0) {
     el.textContent = '';
@@ -731,11 +967,12 @@ function updateTopStatus() {
 }
 
 // ===== EVAL =====
-function startEval(person) {
+async function startEval(person) {
   currentPerson = person;
   currentVenueIdx = 0;
   showScreen('screen-eval');
   document.getElementById('eval-person-label').textContent = person;
+  await loadAllData();
   renderVenueTabs();
   renderEvalForm();
 }
@@ -743,14 +980,14 @@ function startEval(person) {
 function renderVenueTabs() {
   const container = document.getElementById('venue-tabs');
   container.innerHTML = VENUES.map((v, i) => {
-    const hasData = loadEval(currentPerson, v.id) !== null;
+    const hasData = getCachedEval(currentPerson, v.id) !== null;
     return `<button class="venue-tab ${i === currentVenueIdx ? 'active' : ''} ${hasData ? 'has-data' : ''}"
       onclick="switchVenue(${i})">${v.name}</button>`;
   }).join('');
 }
 
-function switchVenue(idx) {
-  collectCurrentRatings();
+async function switchVenue(idx) {
+  await collectCurrentRatings();
   currentVenueIdx = idx;
   renderVenueTabs();
   renderEvalForm();
@@ -758,9 +995,10 @@ function switchVenue(idx) {
 
 function renderEvalForm() {
   const venue = VENUES[currentVenueIdx];
-  const saved = loadEval(currentPerson, venue.id);
-  const ratings = saved ? saved.ratings : {};
+  const saved = getCachedEval(currentPerson, venue.id);
+  const ratings = saved ? (saved.ratings || {}) : {};
   const memo = saved ? (saved.memo || '') : '';
+  const photos = saved ? (saved.photos || []) : [];
 
   let html = `
     <div class="venue-info">
@@ -787,6 +1025,25 @@ function renderEvalForm() {
     html += `</div></div>`;
   });
 
+  // Photo section
+  html += `<div class="photo-section">
+    <div class="photo-header">
+      <div class="photo-label">写真</div>
+      <button class="photo-add-btn" onclick="document.getElementById('photo-input').click()">+ 追加</button>
+    </div>
+    <div class="photo-grid" id="photo-grid">`;
+  if (photos.length === 0) {
+    html += `<div class="photo-empty" style="grid-column:1/-1">まだ写真がありません</div>`;
+  } else {
+    photos.forEach((p, i) => {
+      html += `<div class="photo-thumb">
+        <img src="${p.url}" alt="写真${i+1}" onclick="openLightbox('${p.url}')">
+        <button class="photo-delete" onclick="event.stopPropagation();removePhoto(${i})">✕</button>
+      </div>`;
+    });
+  }
+  html += `</div></div>`;
+
   html += `<div class="memo-section">
     <div class="memo-label">メモ・感想</div>
     <textarea class="memo-input" id="memo-input" placeholder="自由にメモを記入...">${memo}</textarea>
@@ -804,7 +1061,7 @@ function setRating(itemId, val) {
   });
 }
 
-function collectCurrentRatings() {
+async function collectCurrentRatings() {
   const venue = VENUES[currentVenueIdx];
   const ratings = {};
   let hasAny = false;
@@ -818,15 +1075,58 @@ function collectCurrentRatings() {
 
   const memoEl = document.getElementById('memo-input');
   const memo = memoEl ? memoEl.value.trim() : '';
-  if (hasAny || memo) {
-    saveEvalData(currentPerson, venue.id, { ratings, memo });
+  const existing = getCachedEval(currentPerson, venue.id);
+  const photos = existing ? (existing.photos || []) : [];
+
+  if (hasAny || memo || photos.length > 0) {
+    await saveEvalData(currentPerson, venue.id, { ratings, memo, photos });
   }
 }
 
-function saveEval() {
-  collectCurrentRatings();
+async function saveEval() {
+  await collectCurrentRatings();
   renderVenueTabs();
   showToast('保存しました');
+}
+
+// Photo handling
+async function handlePhotoSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+
+  const venue = VENUES[currentVenueIdx];
+  showToast('アップロード中...');
+
+  try {
+    const photo = await uploadPhoto(currentPerson, venue.id, file);
+    const existing = getCachedEval(currentPerson, venue.id) || { ratings: {}, memo: '', photos: [] };
+    if (!existing.photos) existing.photos = [];
+    existing.photos.push(photo);
+    await saveEvalData(currentPerson, venue.id, existing);
+    renderEvalForm();
+    showToast('写真を保存しました');
+  } catch (e) {
+    console.error('Upload error:', e);
+    showToast('アップロードエラー');
+  }
+}
+
+async function removePhoto(idx) {
+  if (!confirm('この写真を削除しますか？')) return;
+  const venue = VENUES[currentVenueIdx];
+  await deletePhoto(currentPerson, venue.id, idx);
+  renderEvalForm();
+  showToast('写真を削除しました');
+}
+
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('active');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
 }
 
 function showToast(msg) {
@@ -837,8 +1137,9 @@ function showToast(msg) {
 }
 
 // ===== RESULT =====
-function showResult() {
+async function showResult() {
   showScreen('screen-result');
+  await loadAllData();
   renderResult();
 }
 
@@ -911,6 +1212,14 @@ function renderResult() {
     <div class="section-title">会場別 詳細比較</div>`;
 
   rankings.forEach(v => {
+    // Collect photos for this venue from both persons
+    const aData = getCachedEval('大悟', v.id);
+    const bData = getCachedEval('柚季', v.id);
+    const allPhotos = [
+      ...((aData && aData.photos) || []).map(p => ({ ...p, who: '大悟' })),
+      ...((bData && bData.photos) || []).map(p => ({ ...p, who: '柚季' })),
+    ];
+
     html += `<div class="detail-venue-card">
       <div class="detail-venue-header">
         <div class="detail-venue-name">${v.name}</div>
@@ -949,7 +1258,20 @@ function renderResult() {
       }
     });
 
-    html += `</div></div>`;
+    html += `</div>`;
+
+    // Photos
+    if (allPhotos.length > 0) {
+      html += `<div class="detail-photos">
+        <div class="photo-label" style="margin-bottom:0.4rem;">写真（${allPhotos.length}枚）</div>
+        <div class="detail-photos-grid">`;
+      allPhotos.forEach(p => {
+        html += `<img src="${p.url}" alt="写真" onclick="openLightbox('${p.url}')">`;
+      });
+      html += `</div></div>`;
+    }
+
+    html += `</div>`;
   });
 
   html += `</div>`;
@@ -1124,17 +1446,24 @@ function drawRadar(venueId) {
   if (hasAnyData('柚季')) drawData('柚季', 'rgb(123, 164, 196)', 0.15);
 }
 
-function resetAll() {
+async function resetAll() {
   if (!confirm('全ての評価データを削除しますか？')) return;
-  VENUES.forEach(v => {
-    localStorage.removeItem(getStorageKey('大悟', v.id));
-    localStorage.removeItem(getStorageKey('柚季', v.id));
-  });
-  goTop();
+  try {
+    const snapshot = await db.collection('evaluations').get();
+    const batch = db.batch();
+    snapshot.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    evalCache = {};
+    showToast('データを削除しました');
+    goTop();
+  } catch (e) {
+    console.error('Reset error:', e);
+    showToast('削除エラー');
+  }
 }
 
 // Init
-updateTopStatus();
+loadAllData().then(() => updateTopStatus());
 </script>
 </body>
 </html>
