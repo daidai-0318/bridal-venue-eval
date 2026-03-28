@@ -1043,8 +1043,7 @@ function drawRadar(venueId) {
   const cx = size / 2;
   const cy = size / 2;
   const maxR = 80;
-  const shortLabels = { venue: '会場・空間', food: 'お料理', staff: 'スタッフ', prestige: '格式・知名度', cost: '料金・予算' };
-  const labels = CATEGORIES.map(c => shortLabels[c.id] || c.name);
+  const labels = CATEGORIES.map(c => c.name);
   const n = labels.length;
   const angleStep = (Math.PI * 2) / n;
   const startAngle = -Math.PI / 2;
@@ -1075,9 +1074,9 @@ function drawRadar(venueId) {
     ctx.stroke();
   }
 
-  // Labels
+  // Labels (2-line split for long labels)
   ctx.fillStyle = '#555';
-  ctx.font = '11px "Hiragino Sans", Arial, sans-serif';
+  ctx.font = '10px "Hiragino Sans", Arial, sans-serif';
   ctx.textBaseline = 'middle';
   for (let i = 0; i < n; i++) {
     const a = startAngle + i * angleStep;
@@ -1086,7 +1085,16 @@ function drawRadar(venueId) {
     const ly = cy + lr * Math.sin(a);
     const cos = Math.cos(a);
     ctx.textAlign = cos > 0.1 ? 'left' : cos < -0.1 ? 'right' : 'center';
-    ctx.fillText(labels[i], lx, ly);
+    const label = labels[i];
+    const mid = label.indexOf('・');
+    if (mid > 0 && label.length > 5) {
+      const line1 = label.substring(0, mid + 1);
+      const line2 = label.substring(mid + 1);
+      ctx.fillText(line1, lx, ly - 7);
+      ctx.fillText(line2, lx, ly + 7);
+    } else {
+      ctx.fillText(label, lx, ly);
+    }
   }
 
   function drawData(person, color, alpha) {
