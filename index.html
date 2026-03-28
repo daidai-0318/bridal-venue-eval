@@ -202,7 +202,21 @@ body {
   background: var(--green);
 }
 
-.eval-body { padding: 1rem; max-width: 600px; margin: 0 auto; }
+.eval-body { padding: 1rem; max-width: 600px; margin: 0 auto; padding-bottom: 1rem; }
+
+.eval-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--gold-bg);
+  padding: 0.8rem 1rem;
+  border-top: 1px solid #E8E2D8;
+  z-index: 100;
+}
+.eval-footer .btn {
+  max-width: 600px;
+  margin: 0 auto;
+  display: block;
+}
 
 .venue-info {
   text-align: center;
@@ -864,6 +878,9 @@ body {
     <div class="venue-tabs" id="venue-tabs"></div>
   </div>
   <div class="eval-body" id="eval-body"></div>
+  <div class="eval-footer">
+    <button class="btn btn-primary" onclick="saveEval()" style="border-radius:30px;">保存する</button>
+  </div>
   <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotoSelect(event)">
 </div>
 
@@ -1178,7 +1195,7 @@ function renderEvalForm() {
     <textarea class="memo-input" id="memo-input" placeholder="自由にメモを記入...">${memo}</textarea>
   </div>`;
 
-  html += `<div style="height: 2rem;"></div>`;
+  html += `<div style="height: 5rem;"></div>`;
 
   document.getElementById('eval-body').innerHTML = html;
 }
