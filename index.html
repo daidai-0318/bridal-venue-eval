@@ -497,6 +497,61 @@ body {
 .legend-dot.b { background: #7BA4C4; }
 
 /* Reset button */
+.cat-filter-tabs {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  padding-bottom: 0.3rem;
+  -webkit-overflow-scrolling: touch;
+}
+.cat-filter-tabs::-webkit-scrollbar { display: none; }
+.cat-filter-tab {
+  flex-shrink: 0;
+  background: var(--light-gray);
+  border: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  color: var(--gray);
+  font-weight: 500;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.cat-filter-tab.active {
+  background: var(--gold);
+  color: var(--white);
+  font-weight: 600;
+}
+
+.cat-venue-row {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.6rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.cat-venue-row.rank-1 { border: 2px solid var(--gold); }
+.cat-venue-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.cat-venue-row-rank {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.cat-venue-row-name { font-weight: 700; font-size: 0.9rem; }
+.cat-venue-row-avg {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
 .reset-section {
   text-align: center;
   margin-top: 2rem;
@@ -842,9 +897,18 @@ function renderResult() {
     html += `</div>`;
   }
 
-  // Detail comparison
+  // Category-based venue comparison
+  html += `<div class="ranking-section">
+    <div class="section-title">カテゴリ別 会場比較</div>
+    <div class="cat-filter-tabs">
+      ${CATEGORIES.map((c, i) => `<button class="cat-filter-tab ${i === 0 ? 'active' : ''}" onclick="switchCatFilter(${i})">${c.name}</button>`).join('')}
+    </div>
+    <div id="cat-venue-compare"></div>
+  </div>`;
+
+  // Detail comparison (per venue)
   html += `<div class="detail-section">
-    <div class="section-title">カテゴリ別 詳細比較</div>`;
+    <div class="section-title">会場別 詳細比較</div>`;
 
   rankings.forEach(v => {
     html += `<div class="detail-venue-card">
@@ -897,8 +961,70 @@ function renderResult() {
 
   body.innerHTML = html;
 
-  // Draw radar charts
+  // Draw radar charts & category compare
   rankings.forEach(v => drawRadar(v.id));
+  renderCatVenueCompare();
+}
+
+// ===== CATEGORY VENUE COMPARE =====
+let currentCatFilterIdx = 0;
+
+function switchCatFilter(idx) {
+  currentCatFilterIdx = idx;
+  document.querySelectorAll('.cat-filter-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  renderCatVenueCompare();
+}
+
+function renderCatVenueCompare() {
+  const container = document.getElementById('cat-venue-compare');
+  if (!container) return;
+  const cat = CATEGORIES[currentCatFilterIdx];
+
+  const venueScores = VENUES.map(v => {
+    const aVal = getCategoryAvg('大悟', v.id, cat.id);
+    const bVal = getCategoryAvg('柚季', v.id, cat.id);
+    const scores = [aVal, bVal].filter(s => s !== null);
+    const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+    return { ...v, aVal, bVal, avg };
+  }).filter(v => v.avg !== null).sort((a, b) => b.avg - a.avg);
+
+  if (venueScores.length === 0) {
+    container.innerHTML = `<div style="text-align:center;color:var(--gray);padding:1rem;font-size:0.85rem;">このカテゴリの評価データがありません</div>`;
+    return;
+  }
+
+  let html = '';
+  venueScores.forEach((v, i) => {
+    const rank = i + 1;
+    html += `<div class="cat-venue-row ${rank === 1 ? 'rank-1' : ''}">
+      <div class="cat-venue-row-header">
+        <div class="cat-venue-row-rank">
+          <div class="rank-badge rank-${rank}" style="width:28px;height:28px;font-size:0.75rem;${rank === 1 ? 'background:var(--gold);color:#fff;' : rank === 2 ? 'background:#AAA;color:#fff;' : rank === 3 ? 'background:#C6956B;color:#fff;' : ''}">${rank}</div>
+          <div class="cat-venue-row-name">${v.name}</div>
+        </div>
+        <div class="cat-venue-row-avg">${v.avg.toFixed(2)}</div>
+      </div>
+      <div class="detail-bars">`;
+
+    if (v.aVal !== null) {
+      html += `<div class="detail-bar-row">
+        <div class="detail-bar-who">大悟</div>
+        <div class="detail-bar-track"><div class="detail-bar-fill person-a" style="width:${v.aVal / 5 * 100}%"></div></div>
+        <div class="detail-bar-score">${v.aVal.toFixed(1)}</div>
+      </div>`;
+    }
+    if (v.bVal !== null) {
+      html += `<div class="detail-bar-row">
+        <div class="detail-bar-who">柚季</div>
+        <div class="detail-bar-track"><div class="detail-bar-fill person-b" style="width:${v.bVal / 5 * 100}%"></div></div>
+        <div class="detail-bar-score">${v.bVal.toFixed(1)}</div>
+      </div>`;
+    }
+
+    html += `</div></div>`;
+  });
+
+  container.innerHTML = html;
 }
 
 // ===== RADAR CHART (pure canvas) =====
