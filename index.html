@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <title>式場評価アプリ</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25,10 +25,10 @@ body {
   background: var(--gold-bg);
   color: var(--dark);
   line-height: 1.6;
-  min-height: 100dvh;
+  min-height: 100vh;
 }
 
-.screen { display: none; min-height: 100dvh; }
+.screen { display: none; min-height: 100vh; }
 .screen.active { display: block; }
 
 /* ===== TOP SCREEN ===== */
@@ -37,7 +37,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100dvh;
+  min-height: 100vh;
   padding: 2rem 1.5rem;
   text-align: center;
 }
