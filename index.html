@@ -1343,13 +1343,13 @@ function renderResult() {
 
     // Photos
     if (allPhotos.length > 0) {
-      const photosVarName = `resultPhotos_${v.id.replace(/-/g, '_')}`;
-      html += `<script>window['${photosVarName}'] = ${JSON.stringify(allPhotos.map(p => p.url))};<\/script>`;
+      const varName = `_rp_${v.id.replace(/-/g, '_')}`;
+      window[varName] = allPhotos.map(p => p.url);
       html += `<div class="detail-photos">
         <div class="photo-label" style="margin-bottom:0.4rem;">写真（${allPhotos.length}枚）</div>
         <div class="detail-photos-grid">`;
       allPhotos.forEach((p, pi) => {
-        html += `<img src="${p.url}" alt="写真" onclick="openLightbox(null, window['${photosVarName}'], ${pi})">`;
+        html += `<img src="${p.url}" alt="写真" onclick="openLightbox(null, window['${varName}'], ${pi})">`;
       });
       html += `</div></div>`;
     }
