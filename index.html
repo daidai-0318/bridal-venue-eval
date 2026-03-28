@@ -1088,7 +1088,7 @@ function drawRadar(venueId) {
     const label = labels[i];
     const mid = label.indexOf('・');
     if (mid > 0 && label.length > 5) {
-      const line1 = label.substring(0, mid + 1);
+      const line1 = label.substring(0, mid);
       const line2 = label.substring(mid + 1);
       ctx.fillText(line1, lx, ly - 7);
       ctx.fillText(line2, lx, ly + 7);
